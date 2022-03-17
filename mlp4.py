@@ -2,32 +2,30 @@ from random import random
 import math  # might be able to just import the exp function and not the whole library
 from tqdm import tqdm
 
-def network_create(input_count, hidden_count, output_count):
-    '''Returns a completed network double nested list with dictionaries inside with random weights (as a list) for each neuron connection.'''
-    network = []
-    layer = []
-    neuron = []
+def main():
+    filepath = '/Volumes/ExternalBH/backpropogatio/'
+    filenames = ['data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
+    for filename in filenames:
+        filename = filepath + filename
+        dataset = []
+        targets = []
 
-    # Create weights for hidden layers.
-    # Each neuron needs weights for each input. Repeat this for the entire layer.
-    for a in range(hidden_count):
-        for b in range(input_count + 1):  # +1 for bias.
-            neuron.append(random())
-        layer.append({'weights':neuron})
-        neuron = []
-          
-    network.append(layer)
-    layer = []
+        parse_file(filename, dataset, targets)
 
-    # Create weights for output neurons.
-    for a in range(output_count):
-        for b in range(hidden_count + 1):  # +1 for bias.
-            neuron.append(random())
-        layer.append({'weights':neuron})
-        neuron = []
+        input_count = len(dataset[0])
+        hidden_count = 2 
+        output_count = 2
+        layers_node_count = [input_count,2,5,8,2]
+        epoch_count = 500000
+        learning_rate = 0.1
+        print(filename.split('/')[-1])
+        network = network_create(layers_node_count)
+        network_train(network, dataset, targets, epoch_count, learning_rate)
+        network_test(network, dataset)
 
-    network.append(layer)
-    '''
+
+def network_create(layers_node_count):
+    '''Returns a completed network double nested list with dictionaries inside with random weights (as a list) for each neuron connection.'''    
     # Pre-set weights for testing.
     network =   [
                     [
@@ -39,24 +37,34 @@ def network_create(input_count, hidden_count, output_count):
                         {'weights': [0.9, 0.8, 0.4]}
                     ]
                 ]
-    '''
+
+    network = []
+    layer = []
+    neuron = []
+   
+    for layer_index, network_layer in enumerate(layers_node_count):
+        if (layer_index == 0 or layer_index == len(layers_node_count)): continue  # Input layer has no weights.
+        for neuron_count in range(network_layer):
+            for connection_count in range(layers_node_count[layer_index - 1] + 1):  # +1 for bias.
+                neuron.append(random())
+            layer.append({'weights':neuron})
+            neuron = []
+        network.append(layer)
+        layer = []
+
     return network
 
 
-def network_train(dataset, targets, number_of_iterations):
+def network_train(network, dataset, targets, epoch_count, learning_rate):
     ''''''
- 
-    for epoch in tqdm(range(number_of_iterations)):   
+    for epoch in tqdm(range(epoch_count)):   
         for row_index, row in enumerate(dataset):
             forward_propogation(network, row)
             target = targets[row_index]
-            backward_propogation(network, row, target)
-            
-            # output compared to targets
-            # either calc error then backpropogate or can this be done during that stage?
+            backward_propogation(network, row, target, learning_rate)
 
 
-def backward_propogation(network, row, target):
+def backward_propogation(network, row, target, learning_rate):
     network.reverse()
 
     for layer_index, layer in enumerate(network):
@@ -73,6 +81,7 @@ def backward_propogation(network, row, target):
                 for next_layer_neuron in next_layer:
                     sum += next_layer_neuron['weights'][neuron_index] * next_layer_neuron['error']
                 error = neuron['output'] * (1 - neuron['output']) * ( sum )
+                neuron['error'] = error
 
             # First hidden layer needs input data to reference, otherwise use layer before.
             next_layer = row
@@ -133,7 +142,7 @@ def forward_propogation(network, row):
     return input
         
 
-def network_test(dataset):
+def network_test(network, dataset):
     for row in dataset:
         output = forward_propogation(network, row)
         if (output[0] > output[1]):  # Only works for binary problems.
@@ -142,11 +151,22 @@ def network_test(dataset):
             output = 1
         print(f"input= {row} \t output= {output}")
     print('\n')
+    return
 
 
 def parse_file(filename, dataset, targets):
-    f = open(filename,"r")
-    lines = f.readlines()
+    try:
+        filename_temp = filename.split('/')[-1]
+        f = open(filename_temp,"r")
+        lines = f.readlines()
+    except FileNotFoundError:
+        try:
+            f = open(filename,"r")
+            lines = f.readlines()
+        except:
+            print(f'\n\nFile \'{filename_temp}\' not found in current working directory or at location: {filename} \n\n')
+            lines = ['0 0\t0 0']
+    
     for line in lines:
         temp = line.split('\t')[0].split()
         for a in range(len(temp)):
@@ -157,24 +177,8 @@ def parse_file(filename, dataset, targets):
         for a in range(len(temp)):
             temp[a] = int(temp[a])
         targets.append(temp)
-    return
+    return dataset, targets
 
 
-filepath = '/Volumes/ExternalBH/backpropogation/'
-filenames = ['data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
-for filename in filenames:
-    filename = filepath + filename
-    dataset = []
-    targets = []
-
-    parse_file(filename, dataset, targets)
-
-    input_count = len(dataset[0])
-    hidden_count = 2
-    output_count = 2
-    number_of_iterations = 500000
-    learning_rate = 0.1
-    print(filename.split('/')[-1])
-    network = network_create(input_count, hidden_count, output_count)
-    network_train(dataset, targets, number_of_iterations)
-    network_test(dataset)
+if __name__ == '__main__':
+    main()
