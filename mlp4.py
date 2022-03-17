@@ -3,7 +3,7 @@ import math  # might be able to just import the exp function and not the whole l
 
 
 def network_create(input_count, hidden_count, output_count):
-    '''Returns a completed network double nested list with dictionaries inside with random weights for each neuron connection.'''
+    '''Returns a completed network double nested list with dictionaries inside with random weights (as a list) for each neuron connection.'''
     network = []
     layer = []
     neuron = []
@@ -27,7 +27,7 @@ def network_create(input_count, hidden_count, output_count):
         neuron = []
 
     network.append(layer)
-
+    '''
     # Pre-set weights for testing.
     network =   [
                     [
@@ -39,7 +39,7 @@ def network_create(input_count, hidden_count, output_count):
                         {'weights': [0.9, 0.8, 0.4]}
                     ]
                 ]
-
+    '''
     return network
 
 
@@ -59,37 +59,34 @@ def network_train(dataset, targets, number_of_iterations):
 def backward_propogation(network, row, target):
     network.reverse()
 
-    for L in range(len(network)):  # for layer in network:
-        layer = network[L]
-        for N in range(len(layer)):  # for neuron in layer:
-            neuron = layer[N]
+    for layer_index, layer in enumerate(network):
+        for neuron_index, neuron in enumerate(layer):
             deltas = []
 
             # Error calculation.
-            if (L == 0):  # if output layer:
-                error = target[N] - neuron['output']
+            if (layer_index == 0):  # if output layer:
+                error = target[neuron_index] - neuron['output']
                 neuron['error'] = error
             else:  # Hidden layer, larger error calculation.
                 sum = 0
-                next_layer = network[L-1]  # Technically layer BEFORE in REVERSED network.
+                next_layer = network[layer_index - 1]  # Technically layer BEFORE in REVERSED network.
                 for next_layer_neuron in next_layer:
-                    sum += next_layer_neuron['weights'][N] * next_layer_neuron['error']
+                    sum += next_layer_neuron['weights'][neuron_index] * next_layer_neuron['error']
                 error = neuron['output'] * (1 - neuron['output']) * ( sum )
 
             # First hidden layer needs input data to reference, otherwise use layer before.
-            if (L+1) < len(network):
-                next_layer = network[L+1]
+            next_layer = row
+            flag = True
+            if (layer_index + 1) < len(network):
+                next_layer = network[layer_index + 1]
                 flag = False
-            elif (L+1) == len(network):
-                next_layer = row
-                flag = True
 
             # Delta calculation.
-            for next_layer_neuron in range(len(next_layer)):
+            for next_layer_neuron in next_layer:
                 if flag:
-                    input_value = next_layer[next_layer_neuron]
+                    input_value = next_layer_neuron
                 else:
-                    input_value = next_layer[next_layer_neuron]['output']
+                    input_value = next_layer_neuron['output']
                 delta = learning_rate * error * input_value
                 deltas.append(delta)
             
@@ -123,12 +120,11 @@ def sigmoid(x):
 def forward_propogation(network, row):
     '''Returns the outputs from the network for this epoch.'''
     input = row
-    for L in range(len(network)):
-        layer = network[L]
+    for layer_index, layer in enumerate(network):
         input_next = []
         for neuron in layer:
             output = activation(input, neuron['weights'])
-            if (L < len(network)-1):  # Output layer doesn't use sigmoid.
+            if (layer_index < len(network) - 1):  # Every layer but output uses sigmoid.
                 output = sigmoid(output)  
             neuron['output'] = output
             input_next.append(neuron['output'])
@@ -140,12 +136,12 @@ def forward_propogation(network, row):
 def network_test(dataset):
     for row in dataset:
         output = forward_propogation(network, row)
-        if (output[0] > output[1]):
+        if (output[0] > output[1]):  # Only works for binary problems.
             output = 0
         else:
             output = 1
         print(f"input= {row} \t output= {output}")
-    print()
+    print('\n')
 
 
 def parse_file(filename, dataset, targets):
@@ -164,7 +160,21 @@ def parse_file(filename, dataset, targets):
     return
 
 
-filename = "/Volumes/ExternalBH/data-OR.txt"
+filename = "data-OR.txt"
+dataset = []
+targets = []
+parse_file(filename, dataset, targets)
+input_count = len(dataset[0])
+hidden_count = 2
+output_count = 2
+number_of_iterations = 100000
+learning_rate = 0.1
+network = network_create(input_count, hidden_count, output_count)
+network_train(dataset, targets, number_of_iterations)
+print(filename.split('/')[-1])
+network_test(dataset)
+
+filename = "data-AND.txt"
 dataset = []
 targets = []
 parse_file(filename, dataset, targets)
@@ -178,21 +188,7 @@ network_train(dataset, targets, number_of_iterations)
 print(filename.split('/')[-1])
 network_test(dataset)
 
-filename = "/Volumes/ExternalBH/data-AND.txt"
-dataset = []
-targets = []
-parse_file(filename, dataset, targets)
-input_count = len(dataset[0])
-hidden_count = 2
-output_count = 2
-number_of_iterations = 1000
-learning_rate = 0.1
-network = network_create(input_count, hidden_count, output_count)
-network_train(dataset, targets, number_of_iterations)
-print(filename.split('/')[-1])
-network_test(dataset)
-
-filename = "/Volumes/ExternalBH/data-XOR.txt"
+filename = "data-XOR.txt"
 dataset = []
 targets = []
 parse_file(filename, dataset, targets)
@@ -205,4 +201,3 @@ network = network_create(input_count, hidden_count, output_count)
 network_train(dataset, targets, number_of_iterations)
 print(filename.split('/')[-1])
 network_test(dataset)
-
