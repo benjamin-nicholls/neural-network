@@ -1,6 +1,6 @@
 from random import random
 import math  # might be able to just import the exp function and not the whole library
-
+from tqdm import tqdm
 
 def network_create(input_count, hidden_count, output_count):
     '''Returns a completed network double nested list with dictionaries inside with random weights (as a list) for each neuron connection.'''
@@ -45,11 +45,11 @@ def network_create(input_count, hidden_count, output_count):
 
 def network_train(dataset, targets, number_of_iterations):
     ''''''
-    for epoch in range(number_of_iterations):
-        for R in range(len(dataset)):
-            row = dataset[R]  
-            output = forward_propogation(network, row)
-            target = targets[R]
+ 
+    for epoch in tqdm(range(number_of_iterations)):   
+        for row_index, row in enumerate(dataset):
+            forward_propogation(network, row)
+            target = targets[row_index]
             backward_propogation(network, row, target)
             
             # output compared to targets
@@ -160,44 +160,21 @@ def parse_file(filename, dataset, targets):
     return
 
 
-filename = "data-OR.txt"
-dataset = []
-targets = []
-parse_file(filename, dataset, targets)
-input_count = len(dataset[0])
-hidden_count = 2
-output_count = 2
-number_of_iterations = 100000
-learning_rate = 0.1
-network = network_create(input_count, hidden_count, output_count)
-network_train(dataset, targets, number_of_iterations)
-print(filename.split('/')[-1])
-network_test(dataset)
+filepath = '/Volumes/ExternalBH/backpropogation/'
+filenames = ['data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
+for filename in filenames:
+    filename = filepath + filename
+    dataset = []
+    targets = []
 
-filename = "data-AND.txt"
-dataset = []
-targets = []
-parse_file(filename, dataset, targets)
-input_count = len(dataset[0])
-hidden_count = 2
-output_count = 2
-number_of_iterations = 1000
-learning_rate = 0.1
-network = network_create(input_count, hidden_count, output_count)
-network_train(dataset, targets, number_of_iterations)
-print(filename.split('/')[-1])
-network_test(dataset)
+    parse_file(filename, dataset, targets)
 
-filename = "data-XOR.txt"
-dataset = []
-targets = []
-parse_file(filename, dataset, targets)
-input_count = len(dataset[0])
-hidden_count = 2
-output_count = 2
-number_of_iterations = 5000
-learning_rate = 0.1
-network = network_create(input_count, hidden_count, output_count)
-network_train(dataset, targets, number_of_iterations)
-print(filename.split('/')[-1])
-network_test(dataset)
+    input_count = len(dataset[0])
+    hidden_count = 2
+    output_count = 2
+    number_of_iterations = 500000
+    learning_rate = 0.1
+    print(filename.split('/')[-1])
+    network = network_create(input_count, hidden_count, output_count)
+    network_train(dataset, targets, number_of_iterations)
+    network_test(dataset)
