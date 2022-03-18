@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 def main():
     filepath = '/Volumes/ExternalBH/backpropogation/'
-    filenames = ['test-data.txt']#, 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
+    filenames = ['data-test.txt']#, 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
     for filename in filenames:
         filename = filepath + filename
         dataset = []
