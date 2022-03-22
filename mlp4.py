@@ -13,8 +13,8 @@ def main():
         if filepath == ' ': filepath = '/Users/bennicholls/My Drive/Uni/Code/backpropogation/'
         if filepath == '': filepath = filepath.strip()
     
-    filenames = ['data-test.txt', 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
-    #filenames = ['data-assignment.txt']
+    #filenames = ['data-test.txt', 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
+    filenames = ['data-assignment.txt']
     for filename in filenames:
         filename = filepath + filename
         dataset = []
@@ -22,15 +22,25 @@ def main():
         parse_file(filename, dataset, targets)
         input_count = len(dataset[0])
         output_count = len(targets[0])  # how to find this out from data
-        layers_node_count = [input_count,3,output_count]
-        epoch_count = 10000
+        layers_node_count = [input_count,2,output_count]
+        epoch_count = 2500
         learning_rate = 0.1
         print(f'\nLayers: {layers_node_count}, number of epochs: {epoch_count}, learning rate: {learning_rate}.\n')
 
         print(filename.split('/')[-1])
         network = network_create(layers_node_count)
         network_train(network, dataset, targets, epoch_count, learning_rate, filename)
+        #print(network)
         network_test(network, dataset)
+
+        filename = 'data-assignment-test.txt'
+        filename = filepath + filename
+        dataset = []
+        targets = []
+        parse_file(filename, dataset, targets)
+        network_test(network, dataset)
+        print(softmax_function(network[-1]))
+
 
 
 def network_create(layers_node_count):
@@ -49,7 +59,7 @@ def network_create(layers_node_count):
         network.append(layer)
         layer = []
 
-    if False:
+    if True:
         # Pre-set weights for testing.
         network =   [
                         [
@@ -85,6 +95,7 @@ def network_train(network, dataset, targets, epoch_count, learning_rate, fileNam
         error_squared_sum = 0
         for row_index, row in enumerate(dataset):
             forward_propogation(network, row)
+            #print('network after forward prop: \n', network)
             target = targets[row_index]
             backward_propogation(network, row, target, learning_rate)
             error_squared_sum += calculate_error_squared(network)
@@ -92,6 +103,20 @@ def network_train(network, dataset, targets, epoch_count, learning_rate, fileNam
         #print('\nepoch= ', epoch+1, '\n', network)
         name = fileName.split('/')[-1] + '. Epochs= ' + str(epoch_count) + '. L= ' + str(learning_rate)
     plot_learning_curve(error_list, name)
+    softmax = softmax_function(network[-1])
+    print('softmax=', softmax)
+
+
+def softmax_function(layer):
+    sum = 0
+    softmax_list = []
+    for neuron_index, neuron in enumerate(layer):
+        sum += math.exp(-neuron['output'])
+    for neuron_index, neuron in enumerate(layer):
+        softmax = math.exp(-neuron['output']) / sum
+        softmax_list.append(softmax)
+    return softmax_list
+    #math.exp(-net_i) / ( math.exp(-net_1) + math.exp(-net_k))
 
 
 def calculate_error_squared(network):
