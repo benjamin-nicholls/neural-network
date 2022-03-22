@@ -1,18 +1,20 @@
 from random import random
 import math  # might be able to just import the exp function and not the whole library
-from tqdm import tqdm
+from tqdm import tqdm  # Used for epoch progress bar.
+import matplotlib.pyplot as plt  # Used to plot errors.
 
 def main():
     try:
         print('Enter filepath to data files:')
         filepath = input('>>> ')
     except:
-        filepath = ''
+        filepath = ' '
     finally:
-        if filepath == '': filepath = '/Users/bennicholls/My Drive/Uni/Code/backpropogation/'
-        if filepath == ' ': filepath = filepath.strip()
+        if filepath == ' ': filepath = '/Users/bennicholls/My Drive/Uni/Code/backpropogation/'
+        if filepath == '': filepath = filepath.strip()
     
-    filenames = ['data-test.txt']#, 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
+    #filenames = ['data-test.txt', 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
+    filenames = ['data-assignment.txt']
     for filename in filenames:
         filename = filepath + filename
         dataset = []
@@ -20,14 +22,14 @@ def main():
         parse_file(filename, dataset, targets)
         input_count = len(dataset[0])
         output_count = len(targets[0])  # how to find this out from data
-        layers_node_count = [input_count,2,output_count]
-        epoch_count = 100000
+        layers_node_count = [input_count,3,output_count]
+        epoch_count = 300
         learning_rate = 0.1
         print(f'\nLayers: {layers_node_count}, number of epochs: {epoch_count}, learning rate: {learning_rate}.\n')
 
         print(filename.split('/')[-1])
         network = network_create(layers_node_count)
-        network_train(network, dataset, targets, epoch_count, learning_rate)
+        network_train(network, dataset, targets, epoch_count, learning_rate, filename)
         network_test(network, dataset)
         #print(network)
 
@@ -47,7 +49,7 @@ def network_create(layers_node_count):
         network.append(layer)
         layer = []
 
-    if True:
+    if False:
         # Pre-set weights for testing.
         network =   [
                         [
@@ -59,18 +61,56 @@ def network_create(layers_node_count):
                             {'weights': [0.9, 0.8, 0.4]}
                         ]
                     ]
+    if True:
+        # Assignment weights for testing.
+        network =   [
+                        [
+                            {'weights': [0.74, 0.80, 0.35, 0.90]},
+                            {'weights': [0.13, 0.40, 0.97, 0.45]},
+                            {'weights': [0.68, 0.10, 0.96, 0.36]}
+                        ],
+                        [
+                            {'weights': [0.35, 0.50, 0.90, 0.98]},
+                            {'weights': [0.80, 0.13, 0.80, 0.92]}
+                        ]
+                    ]
 
     return network
 
 
-def network_train(network, dataset, targets, epoch_count, learning_rate):
+def network_train(network, dataset, targets, epoch_count, learning_rate, fileName):
     ''''''
-    for epoch in tqdm(range(epoch_count)):   
+    error_list = []
+    for epoch in tqdm(range(epoch_count)):
+        error_squared_sum = 0
         for row_index, row in enumerate(dataset):
             forward_propogation(network, row)
             target = targets[row_index]
             backward_propogation(network, row, target, learning_rate)
+            error_squared_sum += calculate_error_squared(network)
+        error_list.append(error_squared_sum)
         #print('\nepoch= ', epoch+1, '\n', network)
+        name = fileName + '. Epochs= ' + str(epoch_count) + '. L= ' + str(learning_rate)
+    plot_learning_curve(error_list, name)
+
+
+def calculate_error_squared(network):
+    error_squared = 0
+    for output_neuron in network[-1]:
+        error_squared += output_neuron['error']**2
+    return error_squared
+
+
+def plot_learning_curve(errors, name):
+    x_data = []
+    y_data = []
+    x_data.extend(a for a in range(len(errors)))
+    y_data.extend(error for error in errors)
+    fig, ax = plt.subplots()
+    fig.suptitle(name)
+    ax.set(xlabel='Epoch', ylabel='Squared Error')
+    ax.plot(x_data, y_data, 'tab:green')
+    plt.show()
 
 
 def backward_propogation(network, row, target, learning_rate):
@@ -88,7 +128,7 @@ def backward_propogation(network, row, target, learning_rate):
                 sum = 0
                 next_layer = network[layer_index - 1]  # Technically layer BEFORE in REVERSED network.
                 for next_layer_neuron in next_layer:
-                    sum += next_layer_neuron['weights'][neuron_index] * next_layer_neuron['error']
+                    sum += next_layer_neuron['weights'][neuron_index] * next_layer_neuron['error'] 
                 error = neuron['output'] * (1 - neuron['output']) * ( sum )
                 neuron['error'] = error
 
@@ -180,7 +220,7 @@ def parse_file(filename, dataset, targets):
     for line in lines:
         temp = line.split('\t')[0].split()
         for a in range(len(temp)):
-            temp[a] = int(temp[a])
+            temp[a] = float(temp[a])
         dataset.append(temp)
 
         temp = line.split('\t')[1].split()
