@@ -13,8 +13,8 @@ def main():
         if filepath == ' ': filepath = '/Users/bennicholls/My Drive/Uni/Code/backpropogation/'
         if filepath == '': filepath = filepath.strip()
     
-    #filenames = ['data-test.txt', 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
-    filenames = ['data-assignment.txt']
+    filenames = ['data-test.txt', 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
+    #filenames = ['data-assignment.txt']
     for filename in filenames:
         filename = filepath + filename
         dataset = []
@@ -90,7 +90,7 @@ def network_train(network, dataset, targets, epoch_count, learning_rate, fileNam
             error_squared_sum += calculate_error_squared(network)
         error_list.append(error_squared_sum)
         #print('\nepoch= ', epoch+1, '\n', network)
-        name = fileName + '. Epochs= ' + str(epoch_count) + '. L= ' + str(learning_rate)
+        name = fileName.split('/')[-1] + '. Epochs= ' + str(epoch_count) + '. L= ' + str(learning_rate)
     plot_learning_curve(error_list, name)
 
 
@@ -152,6 +152,7 @@ def backward_propogation(network, row, target, learning_rate):
             deltas.append(delta)
             neuron['deltas'] = deltas
     
+    print(network)
     # Update weights throughout the network.
     for layer in network:
         for neuron in layer:
