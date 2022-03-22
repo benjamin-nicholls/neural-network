@@ -3,7 +3,15 @@ import math  # might be able to just import the exp function and not the whole l
 from tqdm import tqdm
 
 def main():
-    filepath = '/Volumes/ExternalBH/backpropogation/'
+    try:
+        print('Enter filepath to data files:')
+        filepath = input('>>> ')
+    except:
+        filepath = ''
+    finally:
+        if filepath == '': filepath = '/Users/bennicholls/My Drive/Uni/Code/backpropogation/'
+        if filepath == ' ': filepath = filepath.strip()
+    
     filenames = ['data-test.txt']#, 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
     for filename in filenames:
         filename = filepath + filename
@@ -13,7 +21,7 @@ def main():
         input_count = len(dataset[0])
         output_count = len(targets[0])  # how to find this out from data
         layers_node_count = [input_count,2,output_count]
-        epoch_count = 10
+        epoch_count = 100000
         learning_rate = 0.1
         print(f'\nLayers: {layers_node_count}, number of epochs: {epoch_count}, learning rate: {learning_rate}.\n')
 
@@ -62,8 +70,7 @@ def network_train(network, dataset, targets, epoch_count, learning_rate):
             forward_propogation(network, row)
             target = targets[row_index]
             backward_propogation(network, row, target, learning_rate)
-        print('\nepoch= ', epoch+1)
-        print(network)
+        #print('\nepoch= ', epoch+1, '\n', network)
 
 
 def backward_propogation(network, row, target, learning_rate):
@@ -161,13 +168,14 @@ def parse_file(filename, dataset, targets):
         filename_temp = filename.split('/')[-1]
         f = open(filename_temp,'r')
         lines = f.readlines()
+        filename = filename_temp  # Used to display success message.
     except FileNotFoundError:
         try:
             f = open(filename,'r')
             lines = f.readlines()
         except:
             print(f'\n\nFile \'{filename_temp}\' not found in current working directory or at location: {filename} \n\n')
-            lines = ['0 0\t0 0']
+            exit()
     
     for line in lines:
         temp = line.split('\t')[0].split()
@@ -179,6 +187,7 @@ def parse_file(filename, dataset, targets):
         for a in range(len(temp)):
             temp[a] = int(temp[a])
         targets.append(temp)
+    print('Using data from: ', filename)
     return dataset, targets
 
 
