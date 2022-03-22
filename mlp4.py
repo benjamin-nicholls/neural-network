@@ -23,7 +23,7 @@ def main():
         input_count = len(dataset[0])
         output_count = len(targets[0])  # how to find this out from data
         layers_node_count = [input_count,3,output_count]
-        epoch_count = 300
+        epoch_count = 10000
         learning_rate = 0.1
         print(f'\nLayers: {layers_node_count}, number of epochs: {epoch_count}, learning rate: {learning_rate}.\n')
 
@@ -31,7 +31,7 @@ def main():
         network = network_create(layers_node_count)
         network_train(network, dataset, targets, epoch_count, learning_rate, filename)
         network_test(network, dataset)
-        #print(network)
+
 
 def network_create(layers_node_count):
     '''Returns a completed network double nested list with dictionaries inside with random weights (as a list) for each neuron connection.'''    
@@ -61,7 +61,7 @@ def network_create(layers_node_count):
                             {'weights': [0.9, 0.8, 0.4]}
                         ]
                     ]
-    if True:
+    if False:
         # Assignment weights for testing.
         network =   [
                         [
@@ -152,7 +152,7 @@ def backward_propogation(network, row, target, learning_rate):
             deltas.append(delta)
             neuron['deltas'] = deltas
     
-    print(network)
+
     # Update weights throughout the network.
     for layer in network:
         for neuron in layer:
