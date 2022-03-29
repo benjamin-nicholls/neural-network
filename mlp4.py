@@ -1,5 +1,5 @@
-from random import random
-import math  # might be able to just import the exp function and not the whole library
+from random import randrange
+from math import exp  # might be able to just import the exp function and not the whole library
 from tqdm import tqdm  # Used for epoch progress bar.
 import matplotlib.pyplot as plt  # Used to plot errors.
 
@@ -10,10 +10,12 @@ def main():
     except:
         filepath = ' '
     finally:
-        if filepath == ' ': filepath = '/Users/bennicholls/My Drive/Uni/Code/backpropogation/'
+        if filepath == ' ': filepath = '/Users/bennicholls/My Drive/Uni/Code/backpropogation/'  # mac
+        if filepath == '  ': filepath = 'C:\\Users\\Me\\Google Drive\\Uni\\Code\\backpropogation\\'  # win
         if filepath == '': filepath = filepath.strip()
     
-    #filenames = ['data-test.txt', 'data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
+    #filenames = ['data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
+    #filenames = ['data-test.txt']
     filenames = ['data-assignment.txt']
     for filename in filenames:
         filename = filepath + filename
@@ -22,30 +24,38 @@ def main():
         parse_file(filename, dataset, targets)
         input_count = len(dataset[0])
         output_count = len(targets[0])  # how to find this out from data
-        layers_node_count = [input_count,2,output_count]
-        epoch_count = 2500
+        layers_node_count = [input_count,3,output_count]
+        epoch_count = 100
         learning_rate = 0.1
         print(f'\nLayers: {layers_node_count}, number of epochs: {epoch_count}, learning rate: {learning_rate}.\n')
-
-        print(filename.split('/')[-1])
+        if (len(filename.split('/')) > 1): 
+            filename = filename.split('/')[-1]
+        else:
+             filename = filename.split('\\')[-1]
+        print(filename)
         network = network_create(layers_node_count)
         network_train(network, dataset, targets, epoch_count, learning_rate, filename)
-        #print(network)
         network_test(network, dataset)
 
+    dataset = [[0.3, 0.7, 0.9]]
+    #dataset = [[0.4,0.7]]
+    network_test(network, dataset)
+    print_softmax(network)
+    if True:
         filename = 'data-assignment-test.txt'
         filename = filepath + filename
         dataset = []
         targets = []
-        parse_file(filename, dataset, targets)
+        parse_file(filename, dataset, targets)  # make another method to parse for testing (no targets in file)
         network_test(network, dataset)
-        print(softmax_function(network[-1]))
+        print_softmax(network)
 
-
+def print_softmax(network):
+    softmax = softmax_function(network[-1])
+    print('softmax=', softmax)
 
 def network_create(layers_node_count):
-    '''Returns a completed network double nested list with dictionaries inside with random weights (as a list) for each neuron connection.'''    
-
+    '''Returns a completed network double nested list with dictionaries inside with random weights (as a list) for each neuron connection.'''
     network = []
     layer = []
     neuron = []
@@ -53,7 +63,7 @@ def network_create(layers_node_count):
         if (layer_index == 0 or layer_index == len(layers_node_count)): continue  # Input layer has no weights.
         for neuron_count in range(network_layer):
             for connection_count in range(layers_node_count[layer_index - 1] + 1):  # +1 for bias.
-                neuron.append(random())
+                neuron.append(randrange(-5, 5)/100)
             layer.append({'weights':neuron})
             neuron = []
         network.append(layer)
@@ -71,7 +81,7 @@ def network_create(layers_node_count):
                             {'weights': [0.9, 0.8, 0.4]}
                         ]
                     ]
-    if False:
+    if True:
         # Assignment weights for testing.
         network =   [
                         [
@@ -88,6 +98,17 @@ def network_create(layers_node_count):
     return network
 
 
+def print_network_readable(network, epoch):
+    print('EPOCH=', epoch)
+    for layer_index, layer in enumerate(network):
+        for neuron_index, neuron in enumerate(layer):
+            print('layer=', layer_index, ', neuron=', neuron_index)
+            for key, values in neuron.items():
+                print('\t\t', key, ': ', values)
+            print('\n')
+        print('\n')
+
+
 def network_train(network, dataset, targets, epoch_count, learning_rate, fileName):
     ''''''
     error_list = []
@@ -101,22 +122,21 @@ def network_train(network, dataset, targets, epoch_count, learning_rate, fileNam
             error_squared_sum += calculate_error_squared(network)
         error_list.append(error_squared_sum)
         #print('\nepoch= ', epoch+1, '\n', network)
-        name = fileName.split('/')[-1] + '. Epochs= ' + str(epoch_count) + '. L= ' + str(learning_rate)
+        name = fileName.split('/')[-1] +   '. Epochs= ' + str(epoch_count) + '. L= ' + str(learning_rate)
+        #print_network_readable(network, epoch+1)
     plot_learning_curve(error_list, name)
-    softmax = softmax_function(network[-1])
-    print('softmax=', softmax)
+    print_softmax(network)
 
 
 def softmax_function(layer):
     sum = 0
     softmax_list = []
     for neuron_index, neuron in enumerate(layer):
-        sum += math.exp(-neuron['output'])
+        sum += exp(neuron['output'])
     for neuron_index, neuron in enumerate(layer):
-        softmax = math.exp(-neuron['output']) / sum
+        softmax = exp(neuron['output']) / sum
         softmax_list.append(softmax)
     return softmax_list
-    #math.exp(-net_i) / ( math.exp(-net_1) + math.exp(-net_k))
 
 
 def calculate_error_squared(network):
@@ -129,7 +149,7 @@ def calculate_error_squared(network):
 def plot_learning_curve(errors, name):
     x_data = []
     y_data = []
-    x_data.extend(a for a in range(len(errors)))
+    x_data.extend(epoch for epoch, data in enumerate(errors))
     y_data.extend(error for error in errors)
     fig, ax = plt.subplots()
     fig.suptitle(name)
@@ -198,7 +218,7 @@ def activation(inputs, weights):
 
 def sigmoid(x):
     '''Returns a value between -1 and 1.'''
-    return 1 / (1 + math.exp(-x))
+    return 1 / (1 + exp(-x))
 
 
 def forward_propogation(network, row):
