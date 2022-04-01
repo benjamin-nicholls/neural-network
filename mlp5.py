@@ -5,10 +5,10 @@ from matplotlib import pyplot as plt  # Used to plot errors.
 
 def main():
     # Customisable variables.
-    epoch_count_master = 100
+    epoch_count = 10
     learning_rate = 0.1
-    hidden_layers_neuron_list = [3]
-    filenames = ['data-assignment.txt', 'data-assignment-test.txt']
+    hidden_layers_neuron_list = [2]  # [4,4,3] is three hidden layers. [3] is one hidden layer of 3 neurons.
+    #filenames = ['data-assignment.txt', 'data-assignment-test.txt']
 
     ###### Random weights are overwritten in network_create() with given assignment weights. #####
 
@@ -18,7 +18,7 @@ def main():
         # Append trailing / or \ for Mac/Windows, respectively.
         if '/' in filepath: 
             if (filepath[-1] != '/'): filepath += '/'
-        if '\\' in filepath:
+        elif '\\' in filepath:
             if (filepath[-1] != '\\'): filepath += '\\'
     except:
         filepath = ''
@@ -32,13 +32,11 @@ def main():
         if 'test' in filename:
             test = True
             dataset, targets = parse_file(filename, dataset, targets, True)
-            epoch_count = 1
             network_test(network, dataset)
             print_softmax(network)
         else:
             test = False
             dataset, targets = parse_file(filename, dataset, targets, False)
-            epoch_count = epoch_count_master
 
             input_count = len(dataset[0])
             output_count = len(targets[0])
@@ -52,6 +50,7 @@ def main():
             network = network_create(layers_node_count)
             network_train(network, dataset, targets, epoch_count, learning_rate, filename)
             network_test(network, dataset)
+            print_softmax(network)
 
     return
 
@@ -113,13 +112,13 @@ def network_train(network, dataset, targets, epoch_count, learning_rate, fileNam
     '''Trains the network using the dataset for the epoch count. Forward and then backpropogation. Errors are graphed. Returns network.'''
     error_list = []
     for epoch in tqdm(range(epoch_count)):
-        error_squared_sum = 0
+        error_squared_avg = 0
         for row_index, row in enumerate(dataset):
             forward_propogation(network, row)
             target = targets[row_index]
             backward_propogation(network, row, target, learning_rate)
-            error_squared_sum += calculate_error_squared(network)
-        error_list.append(error_squared_sum)
+            error_squared_avg += calculate_error_squared(network)
+        error_list.append(error_squared_avg)
         name = fileName.split('/')[-1] +   '. Epochs= ' + str(epoch_count) + '. L= ' + str(learning_rate)
     plot_learning_curve(error_list, name)
     return network
@@ -138,10 +137,11 @@ def softmax_function(layer):
 
 
 def calculate_error_squared(network):
-    '''Sums squared errors from output layer of the network. Returns sum.'''
+    '''Sums squared errors from output layer of the network. Returns average.'''
     error_squared = 0
     for output_neuron in network[-1]:
         error_squared += output_neuron['error']**2
+    error_squared = error_squared / len(network[-1])
     return error_squared
 
 
@@ -251,22 +251,11 @@ def network_test(network, dataset):
 def parse_file(filename, dataset, targets, isThisTestData):
     '''Parses file and returns dataset and targets nested lists.'''
     try:
-        if '/' in filename:
-            filename_temp = filename.split('/')[-1]
-        elif '\\' in filename:
-            filename_temp = filename.split('\\')[-1]
-        else:
-            filename_temp = filename
-        f = open(filename_temp,'r')
+        f = open(filename,'r')
         lines = f.readlines()
-        filename = filename_temp  # Used to display success message.
     except FileNotFoundError:
-        try:
-            f = open(filename,'r')
-            lines = f.readlines()
-        except FileNotFoundError:
-            print(f'\n\nFile \'{filename_temp}\' not found in current working directory or at location: {filename} \n\n')
-            exit()
+        print(f'\n\nFile not found in current working directory or at location: {filename} \n\n')
+        exit()
     
     dataset = []
     targets = []
@@ -281,6 +270,7 @@ def parse_file(filename, dataset, targets, isThisTestData):
             for a in range(len(temp)):
                 temp[a] = int(temp[a])
             targets.append(temp)
+
     print('\nUsing data from: ', filename)
     return dataset, targets
 
