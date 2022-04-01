@@ -15,8 +15,8 @@ def main():
         if filepath == '': filepath = filepath.strip()
     
     #filenames = ['data-OR.txt', 'data-AND.txt', 'data-XOR.txt']
-    #filenames = ['data-test.txt']
-    filenames = ['data-assignment.txt']
+    filenames = ['data-lecture.txt']
+    #filenames = ['data-assignment.txt']
     for filename in filenames:
         filename = filepath + filename
         dataset = []
@@ -24,7 +24,7 @@ def main():
         parse_file(filename, dataset, targets)
         input_count = len(dataset[0])
         output_count = len(targets[0])  # how to find this out from data
-        layers_node_count = [input_count,3,output_count]
+        layers_node_count = [input_count,2,output_count]
         epoch_count = 100
         learning_rate = 0.1
         print(f'\nLayers: {layers_node_count}, number of epochs: {epoch_count}, learning rate: {learning_rate}.\n')
@@ -37,11 +37,11 @@ def main():
         network_train(network, dataset, targets, epoch_count, learning_rate, filename)
         network_test(network, dataset)
 
-    dataset = [[0.3, 0.7, 0.9]]
+    #dataset = [[0.3, 0.7, 0.9]]
     #dataset = [[0.4,0.7]]
-    network_test(network, dataset)
-    print_softmax(network)
-    if True:
+    #network_test(network, dataset)
+    #print_softmax(network)
+    if False:
         filename = 'data-assignment-test.txt'
         filename = filepath + filename
         dataset = []
@@ -81,7 +81,7 @@ def network_create(layers_node_count):
                             {'weights': [0.9, 0.8, 0.4]}
                         ]
                     ]
-    if True:
+    if False:
         # Assignment weights for testing.
         network =   [
                         [
@@ -190,10 +190,10 @@ def backward_propogation(network, row, target, learning_rate):
                     input_value = next_layer_neuron
                 else:
                     input_value = next_layer_neuron['output']
-                delta = learning_rate * error * input_value
+                delta = learning_rate * neuron['error'] * input_value
                 deltas.append(delta)
             
-            delta = learning_rate * error * 1  # Add bias delta.
+            delta = learning_rate * neuron['error'] * 1  # Add bias delta.
             deltas.append(delta)
             neuron['deltas'] = deltas
     
