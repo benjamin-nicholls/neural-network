@@ -1,14 +1,19 @@
-from random import randrange  # Used for random weights in network creation.
-from math import exp  # Used for error calculations.
-from tqdm import tqdm  # Used for the epoch progress bar.
-from matplotlib import pyplot as plt  # Used to plot errors.
+# Used for random weights in network creation.
+# Not used in this implementation with given weights but functionality is present.
+from random import randrange
+# Used for error calculations.
+from math import exp  
+# Used for the epoch progress bar.
+from tqdm import tqdm  
+# Used to plot errors.
+from matplotlib import pyplot as plt  
 
 def main():
     # Customisable variables.
-    epoch_count = 10
+    epoch_count = 100
     learning_rate = 0.1
-    hidden_layers_neuron_list = [2]  # [4,4,3] is three hidden layers. [3] is one hidden layer of 3 neurons.
-    #filenames = ['data-assignment.txt', 'data-assignment-test.txt']
+    hidden_layers_neuron_list = [3]  # [3] is one hidden layer of 3 neurons. [4,4,3] is three hidden layers.
+    filenames = ['data-assignment.txt', 'data-assignment-test.txt']
 
     ###### Random weights are overwritten in network_create() with given assignment weights. #####
 
@@ -21,6 +26,7 @@ def main():
         elif '\\' in filepath:
             if (filepath[-1] != '\\'): filepath += '\\'
     except:
+        print('Error in filepath. Setting to working directory.')
         filepath = ''
 
 
@@ -30,12 +36,10 @@ def main():
         filename = filepath + filename
 
         if 'test' in filename:
-            test = True
             dataset, targets = parse_file(filename, dataset, targets, True)
             network_test(network, dataset)
             print_softmax(network)
         else:
-            test = False
             dataset, targets = parse_file(filename, dataset, targets, False)
 
             input_count = len(dataset[0])
@@ -50,15 +54,8 @@ def main():
             network = network_create(layers_node_count)
             network_train(network, dataset, targets, epoch_count, learning_rate, filename)
             network_test(network, dataset)
+            #print_network_readable(network, epoch_count)
             print_softmax(network)
-
-    return
-
-
-def print_softmax(network):
-    '''Prints the softmax values of the output layer neurons. No return.'''
-    softmax = softmax_function(network[-1])
-    print('softmax=', softmax)
     return
 
 
@@ -95,69 +92,43 @@ def network_create(layers_node_count):
     return network
 
 
-def print_network_readable(network, epoch):
-    '''Prints the network by neuron. Dictionary entries printed on one line each. No return.'''
-    print('EPOCH=', epoch)
-    for layer_index, layer in enumerate(network):
-        for neuron_index, neuron in enumerate(layer):
-            print('layer=', layer_index, ', neuron=', neuron_index)
-            for key, values in neuron.items():
-                print('\t\t', key, ': ', values)
-            print('\n')
-        print('\n')
-    return
-
-
 def network_train(network, dataset, targets, epoch_count, learning_rate, fileName):
     '''Trains the network using the dataset for the epoch count. Forward and then backpropogation. Errors are graphed. Returns network.'''
     error_list = []
     for epoch in tqdm(range(epoch_count)):
-        error_squared_avg = 0
+        error_squared = 0
         for row_index, row in enumerate(dataset):
             forward_propogation(network, row)
             target = targets[row_index]
             backward_propogation(network, row, target, learning_rate)
-            error_squared_avg += calculate_error_squared(network)
-        error_list.append(error_squared_avg)
-        name = fileName.split('/')[-1] +   '. Epochs= ' + str(epoch_count) + '. L= ' + str(learning_rate)
+            error_squared += calculate_error_squared(network)
+        error_list.append(error_squared)
+
+    if '/' in fileName: 
+        filename_temp = fileName.split('/')[-1]
+    elif '\\' in fileName:
+        filename_temp = fileName.split('\\')[-1]
+    else:
+        filename_temp = fileName
+    name =  filename_temp + '. Epochs= ' + str(epoch_count) + '. L= ' + str(learning_rate)
     plot_learning_curve(error_list, name)
     return network
 
 
-def softmax_function(layer):
-    '''Calculates the probability each output neuron has of being activated. Returns this as a list.'''
-    sum = 0
-    softmax_list = []
-    for neuron_index, neuron in enumerate(layer):
-        sum += exp(neuron['output'])
-    for neuron_index, neuron in enumerate(layer):
-        softmax = exp(neuron['output']) / sum
-        softmax_list.append(softmax)
-    return softmax_list
-
-
-def calculate_error_squared(network):
-    '''Sums squared errors from output layer of the network. Returns average.'''
-    error_squared = 0
-    for output_neuron in network[-1]:
-        error_squared += output_neuron['error']**2
-    error_squared = error_squared / len(network[-1])
-    return error_squared
-
-
-def plot_learning_curve(errors, name):
-    '''Plots a graph of errors squared vs epoch. Graph is a popup. No return.'''
-    x_data = []
-    y_data = []
-    x_data.extend(epoch for epoch in range(len(errors)))#epoch for epoch, data in enumerate(errors))
-    y_data.extend(error for error in errors)
-    fig, ax = plt.subplots()
-    fig.suptitle(name)
-    ax.set(xlabel='Epoch', ylabel='Squared Error')
-    ax.plot(x_data, y_data, 'tab:green')
-    plt.show()
-    return
-
+def forward_propogation(network, row):
+    '''Returns the outputs from the network for this epoch.'''
+    input = row
+    for layer_index, layer in enumerate(network):
+        input_next = []
+        for neuron in layer:
+            output = activation(input, neuron['weights'])
+            if (layer_index < len(network) - 1):  # Output layer does not use sigmoid.
+                output = sigmoid(output)  
+            neuron['output'] = output
+            input_next.append(neuron['output'])
+        input = input_next
+    return input  # The last "inputs" will actually be the outputs from the output neurons.
+        
 
 def backward_propogation(network, row, target, learning_rate):
     '''Backpropogation for the network. Network updates weights, errors, and deltas. Returns network.'''
@@ -207,6 +178,18 @@ def backward_propogation(network, row, target, learning_rate):
     return network
 
 
+def network_test(network, dataset):
+    '''Forward propagates through the network.'''
+    print('\nTesting:')
+    for row in dataset:
+        output = forward_propogation(network, row)
+        max_output = max(output)
+        for o_index, o in enumerate(output):
+            if o == max_output: max_output_index = o_index
+        print(f'input= {row} \t output= {max_output_index}')
+    return network
+
+
 def activation(inputs, weights):
     '''Return summed dot products of inputs and weights.'''
     net = weights[-1]  # Use bias as the starting net--> no input data to multiply with.
@@ -220,32 +203,25 @@ def sigmoid(x):
     return 1 / (1 + exp(-x))
 
 
-def forward_propogation(network, row):
-    '''Returns the outputs from the network for this epoch.'''
-    input = row
-    for layer_index, layer in enumerate(network):
-        input_next = []
-        for neuron in layer:
-            output = activation(input, neuron['weights'])
-            if (layer_index < len(network) - 1):  # Output layer does not use sigmoid.
-                output = sigmoid(output)  
-            neuron['output'] = output
-            input_next.append(neuron['output'])
-        input = input_next
-    return input  # The last "inputs" will actually be the outputs from the output neurons.
-        
+def softmax_function(layer):
+    '''Calculates the probability each output neuron has of being activated. Returns this as a list.'''
+    sum = 0
+    softmax_list = []
+    for neuron_index, neuron in enumerate(layer):
+        sum += exp(neuron['output'])
+    for neuron_index, neuron in enumerate(layer):
+        softmax = exp(neuron['output']) / sum
+        softmax_list.append(softmax)
+    return softmax_list
 
-def network_test(network, dataset):
-    '''Forward propogates through the network.'''
-    print('\nTesting:')
-    for row in dataset:
-        output = forward_propogation(network, row)
-        if (output[0] > output[1]):  # Only works for binary problems.
-            output = 0
-        else:
-            output = 1
-        print(f'input= {row} \t output= {output}')
-    return network
+
+def calculate_error_squared(network):
+    '''Sums squared errors from output layer of the network. Returns average.'''
+    error_squared = 0
+    for output_neuron in network[-1]:
+        error_squared += output_neuron['error']**2
+    error_squared = error_squared / len(network[-1])
+    return error_squared
 
 
 def parse_file(filename, dataset, targets, isThisTestData):
@@ -273,6 +249,40 @@ def parse_file(filename, dataset, targets, isThisTestData):
 
     print('\nUsing data from: ', filename)
     return dataset, targets
+
+
+def plot_learning_curve(errors, name):
+    '''Plots a graph of errors squared vs epoch. Graph is a popup. No return.'''
+    x_data = []
+    y_data = []
+    x_data.extend(epoch for epoch in range(len(errors)))#epoch for epoch, data in enumerate(errors))
+    y_data.extend(error for error in errors)
+    fig, ax = plt.subplots()
+    fig.suptitle(name)
+    ax.set(xlabel='Epoch', ylabel='Squared Error')
+    ax.plot(x_data, y_data, 'tab:green')
+    plt.show()
+    return
+
+
+def print_softmax(network):
+    '''Prints the softmax values of the output layer neurons. No return.'''
+    softmax = softmax_function(network[-1])
+    print('softmax=', softmax)
+    return
+
+
+def print_network_readable(network, epoch):
+    '''Prints the network by neuron. Dictionary entries printed on one line each. No return.'''
+    print('EPOCH=', epoch)
+    for layer_index, layer in enumerate(network):
+        for neuron_index, neuron in enumerate(layer):
+            print('layer=', layer_index, ', neuron=', neuron_index)
+            for key, values in neuron.items():
+                print('\t\t', key, ': ', values)
+            print('\n')
+        print('\n')
+    return
 
 
 if __name__ == '__main__':
