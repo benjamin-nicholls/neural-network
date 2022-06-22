@@ -1,16 +1,12 @@
-# Used for random weights in network creation.
-# Not used in this implementation with given weights but functionality is present.
-from random import randrange
-# Used for error calculations.
-from math import exp  
-# Used for the epoch progress bar.
-from tqdm import tqdm  
-# Used to plot errors.
-from matplotlib import pyplot as plt  
+# random not used in this implementation with given weights but functionality is present.
+from random import randrange  # Used for random weights in network creation.
+from math import exp  # Used for error calculations.
+from tqdm import tqdm  # Used for the epoch progress bar.
+from matplotlib import pyplot as plt  # Used to plot errors.
 
-def main():
+def main() -> None:
     # Customisable variables.
-    epoch_count = 100
+    epoch_count = 200
     learning_rate = 0.1
     hidden_layers_neuron_list = [3]  # [3] is one hidden layer of 3 neurons. [4,4,3] is three hidden layers.
     filenames = ['data-assignment.txt', 'data-assignment-test.txt']
@@ -53,13 +49,14 @@ def main():
             print(f'\nTraining:\nLayers: {layers_node_count}, number of epochs: {epoch_count}, learning rate: {learning_rate}.\n')
             network = network_create(layers_node_count)
             network_train(network, dataset, targets, epoch_count, learning_rate, filename)
+            # print_network_readable(network, epoch_count)
             network_test(network, dataset)
-            #print_network_readable(network, epoch_count)
+            
             print_softmax(network)
     return
 
 
-def network_create(layers_node_count):
+def network_create(layers_node_count: list) -> list:
     '''Returns a completed network double nested list with dictionaries inside with random weights (as a list) for each neuron connection.'''
     # Dynamic creation of a network with random weights with any number of hidden layers.
     network = []
@@ -92,7 +89,7 @@ def network_create(layers_node_count):
     return network
 
 
-def network_train(network, dataset, targets, epoch_count, learning_rate, fileName):
+def network_train(network: list, dataset: list, targets: list, epoch_count: int, learning_rate: float, fileName: str) -> list:
     '''Trains the network using the dataset for the epoch count. Forward and then backpropogation. Errors are graphed. Returns network.'''
     error_list = []
     for epoch in tqdm(range(epoch_count)):
@@ -115,7 +112,7 @@ def network_train(network, dataset, targets, epoch_count, learning_rate, fileNam
     return network
 
 
-def forward_propogation(network, row):
+def forward_propogation(network: list, row: list) -> list:
     '''Returns the outputs from the network for this epoch.'''
     input = row
     for layer_index, layer in enumerate(network):
@@ -130,7 +127,7 @@ def forward_propogation(network, row):
     return input  # The last "inputs" will actually be the outputs from the output neurons.
         
 
-def backward_propogation(network, row, target, learning_rate):
+def backward_propogation(network: list, row: list, target: int, learning_rate: float) -> list:
     '''Backpropogation for the network. Network updates weights, errors, and deltas. Returns network.'''
     network.reverse()
 
@@ -178,19 +175,18 @@ def backward_propogation(network, row, target, learning_rate):
     return network
 
 
-def network_test(network, dataset):
+def network_test(network: list, dataset: list) -> list:
     '''Forward propagates through the network.'''
     print('\nTesting:')
     for row in dataset:
         output = forward_propogation(network, row)
-        max_output = max(output)
         for o_index, o in enumerate(output):
-            if o == max_output: max_output_index = o_index
+            if o == max(output): max_output_index = o_index
         print(f'input= {row} \t output= {max_output_index}')
     return network
 
 
-def activation(inputs, weights):
+def activation(inputs: list, weights: list) -> float:
     '''Return summed dot products of inputs and weights.'''
     net = weights[-1]  # Use bias as the starting net--> no input data to multiply with.
     for a in range(len(inputs)):
@@ -198,12 +194,12 @@ def activation(inputs, weights):
     return net    
 
 
-def sigmoid(x):
+def sigmoid(x: float) -> float:
     '''Returns a value between -1 and 1.'''
     return 1 / (1 + exp(-x))
 
 
-def softmax_function(layer):
+def softmax_function(layer: list) -> list:
     '''Calculates the probability each output neuron has of being activated. Returns this as a list.'''
     sum = 0
     softmax_list = []
@@ -215,7 +211,7 @@ def softmax_function(layer):
     return softmax_list
 
 
-def calculate_error_squared(network):
+def calculate_error_squared(network: list) -> float:
     '''Sums squared errors from output layer of the network. Returns average.'''
     error_squared = 0
     for output_neuron in network[-1]:
@@ -224,7 +220,7 @@ def calculate_error_squared(network):
     return error_squared
 
 
-def parse_file(filename, dataset, targets, isThisTestData):
+def parse_file(filename: str, dataset: list, targets: list, isThisTestData: bool) -> tuple:
     '''Parses file and returns dataset and targets nested lists.'''
     try:
         f = open(filename,'r')
@@ -251,7 +247,7 @@ def parse_file(filename, dataset, targets, isThisTestData):
     return dataset, targets
 
 
-def plot_learning_curve(errors, name):
+def plot_learning_curve(errors: list, name: str) -> None:
     '''Plots a graph of errors squared vs epoch. Graph is a popup. No return.'''
     x_data = []
     y_data = []
@@ -265,14 +261,14 @@ def plot_learning_curve(errors, name):
     return
 
 
-def print_softmax(network):
+def print_softmax(network: list) -> None:
     '''Prints the softmax values of the output layer neurons. No return.'''
     softmax = softmax_function(network[-1])
     print('softmax=', softmax)
     return
 
 
-def print_network_readable(network, epoch):
+def print_network_readable(network: list, epoch: int) -> None:
     '''Prints the network by neuron. Dictionary entries printed on one line each. No return.'''
     print('EPOCH=', epoch)
     for layer_index, layer in enumerate(network):
